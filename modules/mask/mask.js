@@ -14,6 +14,7 @@ angular.module('ui.mask', [])
       priority: 100,
       require: 'ngModel',
       restrict: 'A',
+      scope: { isRequired: "&ngRequired", uiMask: "@uiMask" },
       compile: function uiMaskCompilingFunction(){
         var options = maskConfig;
 
@@ -22,7 +23,7 @@ angular.module('ui.mask', [])
             maskCaretMap, maskPatterns, maskPlaceholder, maskComponents,
           // Minimum required length of the value to be considered valid
             minRequiredLength,
-            value, valueMasked, isValid,
+            value, valueMasked, isValid, isRequired,
           // Vars for initializing/uninitializing
             originalPlaceholder = iAttrs.placeholder,
             originalMaxlength = iAttrs.maxlength,
@@ -37,6 +38,12 @@ angular.module('ui.mask', [])
             if (!maskProcessed) {
               return uninitialize();
             }
+
+            // Initialize the required state, if dynamic.
+            // This is so we don't trigger a validation failure
+            // if ngRequired exists but resolves to false
+            isRequired = !!scope.isRequired();
+
             initializeElement();
             bindEventListeners();
             return true;
@@ -77,7 +84,7 @@ angular.module('ui.mask', [])
             // to be out-of-sync with what the controller's $viewValue is set to.
             controller.$viewValue = value.length ? maskValue(value) : '';
             controller.$setValidity('mask', isValid);
-            if (value === '' && controller.$error.required !== undefined) {
+            if (value === '' && controller.$error.required !== undefined && isRequired) {
               controller.$setValidity('required', false);
             }
             return isValid ? value : undefined;
